@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather App</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="card">
+    <div class="search">
+        <input type="text" placeholder="enter city name">
+        <button><img src="images/search.png" alt=""></button>
+    </div>
+    <div class="location-btn">
+        <button>Use Current Location</button>
+    </div>
+    <div class="error">
+        <p>Invalid city name</p>
+    </div>
+    <div class="weather">
+        <img src="images/rain.png" class="weather-icon">
+        <h1 class="temp">22</h1>
+        <h2 class="city">New York</h2>
+        <div class="details">
+            <div class="col">
+                <img src="images/humidity.png">
+                <div>
+                    <p class="humidity">50%</p>
+                    <p>Humidity</p>
+                </div>
+            </div>
+            <div class="col">
+                <img src="images/wind.png">
+                <div>
+                    <p class="wind">15 km/h</p>
+                    <p>Wind Speed</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const api_key = "c8963fdc2bd2910e1ea9dfb02b5619e8";
+const api_url = "https://api.openweathermap.org/data/2.5/weather?units=imperial&q=";
+const api_get_city = "http://api.openweathermap.org/geo/1.0/reverse?";
+
+const search_box = document.querySelector(".search input");
+const search_button = document.querySelector(".search button");
+const weather_icon = document.querySelector(".weather-icon");
+const location_button = document.querySelector(".location-btn");
+
+async function check_weather(city) {
+    const response = await fetch(api_url + city + `&appid=${api_key}`);
+
+    if (response.status == 404) {
+        document.querySelector(".error").style.display = "block";
+        document.querySelector(".weather").style.display = "none";
+    }
+    else {
+        var data = await response.json();
+
+        document.querySelector(".city").innerHTML = data.name;
+        document.querySelector(".temp").innerHTML = Math.round(data.main.temp) + "°C";
+        document.querySelector(".humidity").innerHTML = data.main.humidity + "%";
+        document.querySelector(".wind").innerHTML = data.wind.speed + " km/h";
+
+        if (data.weather[0].main == "Clouds") {
+            weather_icon.src = "images/clouds.png";
+        }
+        else if (data.weather[0].main == "Clear") {
+            weather_icon.src = "images/clear.png";
+        }
+        else if (data.weather[0].main == "Rain") {
+            weather_icon.src = "images/rain.png";
+        }
+        else if (data.weather[0].main == "Drizzle") {
+            weather_icon.src = "images/drizzle.png";
+        }
+        else if (data.weather[0].main == "Mist") {
+            weather_icon.src = "images/mist.png";
+        }
+
+        document.querySelector(".weather").style.display = "block";
+        document.querySelector(".error").style.display = "none";
+    }
+}
+
+
+
+const get_user_city = () => {
+    if ("geolocation" in navigator) {
+        navigator.geolocation.getCurrentPosition(
+            async (position) => {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+
+                // console.log(`Latitude: ${lat}, longitude: ${lng}`);
+
+                try {
+                const response = await fetch(api_get_city + `lat=${lat}&lon=${lng}&appid=${api_key}`);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                const data = await response.json();
+                
+                // console.log("City data:", data[0].name);
+                check_weather(data[0].name)
+
+                } catch (error) {
+                console.error("Error fetching city data:", error);
+                }
+            },
+            (error) => {
+                console.error("Error getting user location:", error);
+            }
+        );
+    } 
+    else {
+        console.error("Geolocation is not supported by this browser.");
+    }
+};
+
+search_button.addEventListener("click", ()=>{
+    check_weather(search_box.value);
+})
+location_button.addEventListener("click", get_user_city)
+
+</script>
+</body>
+</html>
